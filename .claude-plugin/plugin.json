@@ -1,11 +1,22 @@
 {
   "name": "outpost",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Outpost: one pane for every coding agent you run from Claude Code (Claude, Codex, opencode, Copilot, Antigravity), with avatars, timelines, follow-ups and a talk mode for the prompt box.",
-  "author": { "name": "amramos", "url": "https://github.com/amramos" },
+  "author": {
+    "name": "amramos",
+    "url": "https://github.com/amramos"
+  },
   "homepage": "https://github.com/amramos/outpost",
   "repository": "https://github.com/amramos/outpost",
   "license": "MIT",
-  "keywords": ["agents", "codex", "opencode", "copilot", "antigravity", "pane", "orchestration"],
+  "keywords": [
+    "agents",
+    "codex",
+    "opencode",
+    "copilot",
+    "antigravity",
+    "pane",
+    "orchestration"
+  ],
   "types": "./types/index.d.ts"
 }
