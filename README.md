@@ -4,6 +4,11 @@ One pane for every coding agent you run from Claude Code.
 
 Outpost is a Claude Code mod that puts your Claude subagents and the agents you run through other CLIs — **OpenAI Codex**, **opencode**, **GitHub Copilot CLI** and **Google Antigravity (`agy`)** — side by side in one pane, so Claude Code can be your only harness while you use every subscription you have.
 
+<p align="center">
+  <img src="docs/roster.png" alt="The Outpost pane: Claude, Codex, opencode, Copilot and Antigravity agents in one list, each with its avatar, provider, model and last answer" width="49%">
+  <img src="docs/session.png" alt="An Antigravity agent's session in the Outpost pane: the prompt, folded tool calls, and the reply with the image it generated" width="49%">
+</p>
+
 ## What it does
 
 - **One roster.** Running, needs-attention and recent agents in one list, each with a mascot avatar, its provider and model, and a preview of its last answer.
@@ -12,6 +17,12 @@ Outpost is a Claude Code mod that puts your Claude subagents and the agents you 
 - **Pictures inline.** Images an agent generates or mentions show in the conversation, with a button to open them full size.
 - **Talk mode.** A band above the prompt box picks a provider and model; your prompts then go straight to Codex, opencode, Copilot or Antigravity instead of Claude. Toggle **Share with Claude** to let Claude read those exchanges, or keep them out of its context.
 - **Tools for Claude.** `agent_start`, `agent_send` and `agent_sessions` let Claude start and follow up on external agents itself, which then appear in the pane.
+
+<p align="center">
+  <img src="docs/talk.png" alt="Talk mode: the band above the prompt box set to Codex with model gpt-6-astra, with the Share with Claude and Auto-approve tools toggles" width="80%">
+</p>
+
+In talk mode, pressing Enter sends your prompt to the chosen provider and opens its conversation in the Outpost pane. The app marks the prompt as stopped by a hook ("Sent to Codex · gpt-6-astra. The reply appears in the Outpost pane.") because it never reached Claude.
 
 ## Install
 
@@ -35,8 +46,8 @@ Answer `y` to add the marketplace, then pick a scope (user is the default).
 
 - **Claude Code** with mod (plugin hooks module) support.
 - **Node.js 22.5 or newer** on your `PATH` (the scanner uses Node's built-in `node:sqlite` to read opencode's database).
-- **Python 3 with Pillow** (`pip install pillow`) for avatars, logos and image previews.
-- Any of the CLIs you want to use, signed in: `codex`, `opencode`, `copilot`, `agy`. Outpost finds them on your `PATH` (and `agy` in its default install folder).
+- **Python 3 with Pillow** (`pip install pillow`) for avatars, logos and image previews. Outpost uses the first of `python`, `python3` and `py -3` that has Pillow; without one, everything but pictures still works.
+- Any of the CLIs you want to use, signed in: `codex`, `opencode`, `copilot`, `agy`. Outpost finds them on your `PATH` — npm, Homebrew, winget, scoop and standalone installs alike — and `agy` in its default install folder too. The talk picker lists only the ones it finds.
 - Pasting images from the clipboard and the file picker use PowerShell, so they work on **Windows** only for now. Everything else is cross-platform.
 
 ## Use

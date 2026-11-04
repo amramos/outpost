@@ -835,7 +835,11 @@ const CANDIDATES = {
     { bin: path.join(dir, 'node_modules', 'opencode-ai', 'bin', process.platform === 'win32' ? 'opencode.exe' : 'opencode') },
     { bin: path.join(dir, process.platform === 'win32' ? 'opencode.exe' : 'opencode') },
   ],
-  copilot: dir => [{ bin: path.join(dir, process.platform === 'win32' ? 'copilot.exe' : 'copilot') }],
+  copilot: dir => [
+    { bin: path.join(dir, process.platform === 'win32' ? 'copilot.exe' : 'copilot') },
+    // npm's install leaves only a copilot.cmd shim on Windows: run its loader with node
+    { js: path.join(dir, 'node_modules', '@github', 'copilot', 'npm-loader.js') },
+  ],
   antigravity: dir => [{ bin: path.join(dir, process.platform === 'win32' ? 'agy.exe' : 'agy') }],
 }
 // default install places, for a PATH that predates the install
@@ -935,6 +939,21 @@ async function main() {
       if (e.text && e.text.length > cap) e.text = e.text.slice(0, cap - 1) + '…'
     }
     process.stdout.write(JSON.stringify(items.slice(-150)))
+  } else if (cmd === 'installed') {
+    // which provider CLIs this machine has, for the talk picker
+    process.stdout.write(JSON.stringify(Object.fromEntries(Object.keys(CANDIDATES).map(p => [p, where(p) !== null]))))
+  } else if (cmd === 'python') {
+    // the first Python that has Pillow: `python` on Windows, often only `python3` elsewhere
+    const tries = [['python'], ['python3'], ['py', '-3']]
+    let found = null
+    for (const argv of tries) {
+      try {
+        execFileSync(argv[0], [...argv.slice(1), '-c', 'import PIL'], { stdio: 'ignore', timeout: 15_000, windowsHide: true })
+        found = argv
+        break
+      } catch {}
+    }
+    process.stdout.write(JSON.stringify({ argv: found }))
   } else if (cmd === 'models') {
     process.stdout.write(JSON.stringify(await listModels()))
   } else if (cmd === 'logdir') {

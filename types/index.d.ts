@@ -123,6 +123,8 @@ declare module 'claude-code' {
       attachments: Shaped<Record<string, string[]>>
       /** who the main prompt box talks to */
       talk: Shaped<TalkState>
+      /** provider → whether its CLI was found on this machine */
+      installed: Shaped<Record<string, boolean>>
       /** provider → models it can run (scripts/agents-scan.mjs models) */
       modelLists: Shaped<Record<string, string[]>>
       /** UI toggles: section expansions, folded groups, open menus */

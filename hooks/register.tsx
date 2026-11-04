@@ -28,6 +28,7 @@ const talkA = atom(
   { provider: 'claude', models: {}, sessions: {}, shared: false, autoApprove: false } as TalkState,
   { shape: 'talk-1' },
 )
+const installedA = atom({ plugin: 'outpost', key: 'installed' } as const, {} as Record<string, boolean>, { shape: 'installed-1' })
 const modelListsA = atom({ plugin: 'outpost', key: 'modelLists' } as const, {} as Record<string, string[]>, { shape: 'models-1' })
 const selectedA = atom({ plugin: 'outpost', key: 'selected' } as const, null as Selection, { shape: 'sel-1' })
 const timelineA = atom({ plugin: 'outpost', key: 'timeline' } as const, [] as TimelineItem[], { shape: 'tl-1' })
@@ -261,7 +262,9 @@ async function fetchMissingLogos($: Dollar) {
     if (have[provider]) continue
     for (const url of urls) {
       try {
-        const ran = await $.process.run(['python', '-I', `${$.plugin.root}/scripts/avatar.py`, '--fit', url], { timeoutMs: 30_000 })
+        const py = await findPython($)
+        if (!py) return
+        const ran = await $.process.run([...py, '-I', `${$.plugin.root}/scripts/avatar.py`, '--fit', url], { timeoutMs: 30_000 })
         if (ran.exitCode !== 0 || !ran.stdout.trim()) continue
         const png = ran.stdout.trim()
         await update($, logosA, l => ({ ...l, [provider]: png }))
@@ -359,7 +362,7 @@ async function ensureThumbs($: Dollar, paths: string[]) {
   try {
     const got = await runJson<Record<string, Thumb>>(
       $,
-      ['python', '-I', `${$.plugin.root}/scripts/thumb.py`, String(THUMB_WIDTH), ...missing],
+      [...(await findPython($, true)), '-I', `${$.plugin.root}/scripts/thumb.py`, String(THUMB_WIDTH), ...missing],
       60_000,
     )
     await update($, thumbsA, t => {
@@ -947,7 +950,30 @@ async function talkTo($: Dollar, text: string) {
   await persistTalk($)
 }
 
+/**
+ * The Python to run the picture helpers with: the first of python, python3
+ * and py -3 that has Pillow. Null when there is none; `orThrow` throws then.
+ */
+let pythonArgv: string[] | null | undefined
+async function findPython($: Dollar, orThrow: true): Promise<string[]>
+async function findPython($: Dollar, orThrow?: false): Promise<string[] | null>
+async function findPython($: Dollar, orThrow = false): Promise<string[] | null> {
+  if (pythonArgv === undefined) {
+    try {
+      pythonArgv = (await runJson<{ argv: string[] | null }>($, ['node', scanner($), 'python'], 60_000)).argv
+    } catch {
+      pythonArgv = null
+    }
+  }
+  if (!pythonArgv && orThrow) throw new Error('Python 3 with Pillow not found (pip install pillow)')
+  return pythonArgv
+}
+
 async function loadModelLists($: Dollar) {
+  try {
+    const installed = await runJson<Record<string, boolean>>($, ['node', scanner($), 'installed'], 30_000)
+    await update($, installedA, () => installed)
+  } catch {}
   try {
     const lists = await runJson<Record<string, string[]>>($, ['node', scanner($), 'models'], 60_000)
     await update($, modelListsA, () => lists)
@@ -1161,13 +1187,17 @@ export const register: Register = on => {
     const Select: any = 'Select' in table ? table.Select : undefined
     const talk: TalkState = await read($, talkA)
     const lists: Record<string, string[]> = await read($, modelListsA)
+    const installed: Record<string, boolean> = await read($, installedA)
     const p = talk.provider
     const external = p !== 'claude'
     const color = external ? PROVIDER[p].color : undefined
 
     const providerOptions = [
       { value: 'claude', label: 'Claude' },
-      ...(Object.keys(PROVIDER) as ProviderKey[]).filter(k => k !== 'claude').map(k => ({ value: k, label: PROVIDER[k].label })),
+      // only the CLIs this machine has (and the one picked, should it vanish)
+      ...(Object.keys(PROVIDER) as ProviderKey[])
+        .filter(k => k !== 'claude' && (installed[k] !== false || k === p))
+        .map(k => ({ value: k, label: PROVIDER[k].label })),
     ]
     const choose = async (value: string) => {
       await update($, talkA, t => ({ ...t, provider: value as TalkState['provider'] }))
@@ -1308,7 +1338,9 @@ export const register: Register = on => {
     }
     const [, rawName = '', source = ''] = m
     const name = rawName.trim().toLowerCase()
-    const ran = await $.process.run(['python', '-I', `${$.plugin.root}/scripts/avatar.py`, source], { timeoutMs: 40_000 })
+    const py = await findPython($)
+    if (!py) return { text: 'Avatars need Python 3 with Pillow (pip install pillow); none was found on the PATH.' }
+    const ran = await $.process.run([...py, '-I', `${$.plugin.root}/scripts/avatar.py`, source], { timeoutMs: 40_000 })
     if (ran.exitCode !== 0 || !ran.stdout) {
       return { text: `Couldn't load that picture: ${(ran.stderr || 'no output').slice(0, 200)}` }
     }

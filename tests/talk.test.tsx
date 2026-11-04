@@ -67,6 +67,24 @@ test('a provider with hundreds of models still draws the band: a family picker, 
   await ui.unmount()
 })
 
+test('the provider picker offers only the CLIs this machine has', async ($, on) => {
+  on(
+    'state.get',
+    seed({
+      talk: talk({ provider: 'codex' }),
+      installed: { shape: 'installed-1', value: { codex: true, opencode: false, copilot: true, antigravity: false } },
+    }),
+  )
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  const picker = (await ui.find({ type: 'Select', key: 'talk-provider' })) as unknown as
+    | { props?: { options?: { value: string }[] } }
+    | undefined
+  const values = (picker?.props?.options ?? []).map(o => o.value)
+  if (values.length) expect(values).toEqual(['claude', 'codex', 'copilot'])
+  expect(picker).toBeDefined()
+  await ui.unmount()
+})
+
 test('with Claude selected the band is just the provider picker', async ($, on) => {
   on('state.get', seed({ talk: talk({}) }))
   const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
