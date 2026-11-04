@@ -1,0 +1,6 @@
+{
+  "name": "outpost",
+  "description": "Outpost: one pane for every coding agent you run from Claude Code (Claude, Codex, opencode, Copilot, Antigravity).",
+  "owner": { "name": "amramos" },
+  "plugins": [{ "name": "outpost", "source": "./" }]
+}
